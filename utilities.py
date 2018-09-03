@@ -31,6 +31,42 @@ def read_mama_2D(filename):
     return matrix, cal, y_array, x_array # Returning y (Ex) first as this is axis 0 in matrix language
 
 
+def write_mama_2D(matrix, filename, y_array, x_array, comment=""):
+    import time
+    outfile = open(filename, 'w')
+
+    # Write mandatory header:
+    # outfile.write('!FILE=Disk \n')
+    # outfile.write('!KIND=Spectrum \n')
+    # outfile.write('!LABORATORY=Oslo Cyclotron Laboratory (OCL) \n')
+    # outfile.write('!EXPERIMENT=pyma \n')
+    # outfile.write('!COMMENT=none|RE:alfna-20FN:RN:UN:FN:RN: \n')
+    # outfile.write('!TIME=DATE:'+time.strftime("%d-%b-%y %H:%M:%S", time.localtime())+'   \n')
+    # outfile.write('!CALIBRATION EkeV=6, %12.6E, %12.6E, 0.000000E+00, %12.6E, %12.6E, 0.000000E+00 \n' %(Egamma_range[0], (Egamma_range[1]-Egamma_range[0]), Ex_range[0], (Ex_range[1]-Ex_range[0])))
+    # outfile.write('!PRECISION=16 \n')
+    # outfile.write('!DIMENSION=2,0:%4d,0:%4d \n' %(len(matrix[:,0]), len(matrix[0,:])))
+    # outfile.write('!CHANNEL=(0:%4d,0:%4d) \n' %(len(matrix[:,0]), len(matrix[0,:])))
+    header_string ='!FILE=Disk \n'
+    header_string +='!KIND=Spectrum \n'
+    header_string +='!LABORATORY=Oslo Cyclotron Laboratory (OCL) \n'
+    header_string +='!EXPERIMENT= pyma \n'
+    header_string +='!COMMENT={:s} \n'.format(comment)
+    header_string +='!TIME=DATE:'+time.strftime("%d-%b-%y %H:%M:%S", time.localtime())+'   \n'
+    header_string +='!CALIBRATION EkeV=6, %12.6E, %12.6E, 0.000000E+00, %12.6E, %12.6E, 0.000000E+00 \n' %(x_array[0], (x_array[1]-x_array[0]), y_array[0], (y_array[1]-y_array[0]))
+    header_string +='!PRECISION=16 \n'
+    header_string +="!DIMENSION=2,0:{:4d},0:{:4d} \n".format(len(matrix[0,:])-1, len(matrix[:,0])-1)
+    header_string +='!CHANNEL=(0:%4d,0:%4d) ' %(len(matrix[0,:])-1, len(matrix[:,0])-1)
+
+    footer_string = "!IDEND=\n"
+
+    # Write matrix:
+    # matrix.tofile(filename, sep='       ', format="{:14.8E}")
+    # matrix.tofile(filename, sep=' ', format="%-17.8E")
+    np.savetxt(filename, matrix, fmt="%-17.8E", delimiter=" ", newline="\n", header=header_string, footer=footer_string, comments="")
+
+    outfile.close()
+
+
 def rebin_and_shift(array, E_range, N_final, rebin_axis=0):
     # Function to rebin an M-dimensional array either to larger or smaller binsize.
     # Written by J{\o}rgen E. Midtb{\o}, University of Oslo, j.e.midtbo@fys.uio.no, github.com/jorgenem
@@ -79,3 +115,11 @@ def rebin_and_shift(array, E_range, N_final, rebin_axis=0):
         array_rebinned = array_rebinned.reshape(dimensions).sum(axis=(rebin_axis+1)) 
         E_range_shifted_and_scaled = np.linspace(0, E_range[-1]-E_range[0], N_final)
     return array_rebinned, E_range_shifted_and_scaled
+
+
+def div0( a, b ):
+    """ division function designed to ignore / 0, i.e. div0( [-1, 0, 1], 0 ) -> [0, 0, 0] """
+    with np.errstate(divide='ignore', invalid='ignore'):
+        c = np.true_divide( a, b )
+        c[ ~ np.isfinite( c )] = 0  # -inf inf NaN
+    return c

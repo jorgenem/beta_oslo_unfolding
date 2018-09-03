@@ -47,14 +47,14 @@ Emax = 10*1e3
 Nbins = len(E_resp_array)
 matrix = np.zeros((Nbins, Nbins))
 
-N_draws = 100
-N_resp_draws = 1000
+N_draws = 1
+N_resp_draws = 100000
 M = 2
 
 np.random.seed(2)
 # E1s = np.random.uniform(low=Emin, high=Emax, size=N_draws)
-E1s = np.random.triangular(left=Emin, mode=(Emax+Emin)/2, right=Emax, size=N_draws)
-# E1s = 5*1e3*np.ones(N_draws)
+# E1s = np.random.triangular(left=Emin, mode=(Emax+Emin)/2, right=Emax, size=N_draws)
+E1s = 1*1e3*np.ones(N_draws)
 E2s = Emax - E1s
 # E2s = np.random.uniform(low=Emin, high=Emax, size=N_draws)
 
@@ -89,6 +89,9 @@ for i_draw in range(N_draws):
 
 N_final = int(len(E_resp_array)/6)
 matrix_rebinned, E_resp_array_rebinned = rebin_and_shift(rebin_and_shift(matrix, E_resp_array, N_final=N_final, rebin_axis=0), E_resp_array, N_final=N_final, rebin_axis=1)
+
+
+write_mama_2D(matrix_rebinned, "folded_2D_2gammas1and9MeV.m", E_resp_array_rebinned, E_resp_array_rebinned)
 
 f_max, ax_mat = plt.subplots(1,1)
 ax_mat.pcolormesh(E_resp_array, E_resp_array, matrix, norm=LogNorm())
