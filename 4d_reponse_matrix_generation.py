@@ -40,16 +40,7 @@ with open(fname_resp) as file:
 # plt.pcolormesh(E_resp_array, E_resp_array, R_2D, norm=LogNorm())
 # sys.exit(0)
 
-
-Emin = 100
-Emax = 10*1e3
-
-N_draws = 15
-N_resp_draws = int(1e4)
-
-np.random.seed(2)
-
-def CalcResponse(E1s, E2s=None, E3s=None, E4s=None, E_resp_array=E_resp_array, N_resp_draws=N_resp_draws, response=R_2D):
+def CalcResponse(E1s, E2s=None, E3s=None, E4s=None, E_resp_array=None, N_resp_draws=None, response=None):
 	# find the multiplicity
 	M = 1
 	if E2s is not None: M = 2 
@@ -64,6 +55,8 @@ def CalcResponse(E1s, E2s=None, E3s=None, E4s=None, E_resp_array=E_resp_array, N
 		index_Eg = np.argmin(np.abs(Eg_arr - Eg))
 		Eg_folded = np.random.choice(Eg_arr, size=size, p=response[index_Eg,:])
 		return Eg_folded
+
+	print("working on response matrix")
 
 	# find the response and Ex for each gamma ray in N_draws
 	for i_draw in range(N_draws):
@@ -84,30 +77,113 @@ def CalcResponse(E1s, E2s=None, E3s=None, E4s=None, E_resp_array=E_resp_array, N
 			for Eg in Eg_folded_arr:
 				i_Eg = np.argmin(np.abs(E_resp_array - Eg[i_resp_draws]))
 				matrix[i_Ex,i_Eg] += 1
-
+	print ("Finished repsonse matrix")
 	return matrix
 
-E1s = 1*1e3*np.ones(N_draws) # E1 = 1 MeV
-# E1s = np.random.uniform(low=Emin, high=Emax, size=N_draws)
-# E1s = np.random.triangular(left=Emin, mode=(Emax+Emin)/2, right=Emax, size=N_draws)
-# E2s = np.random.uniform(low=Emin, high=Emax, size=N_draws)
-E2s = Emax - E1s
-matrix = CalcResponse(E1s,E2s)
-write_mama_2D(matrix_rebinned, "folded_2D_2gammas1and9MeV.m", E_resp_array_rebinned, E_resp_array_rebinned)
+np.random.seed(2)
+Emin = 100
+Emax = 10*1e3
 
+DoPlotting = True
+write_mama_2D = False
 
-# print(matrix[matrix>0], flush=True)
+if write_mama_2D:
+	# writing results to mama
+	N_draws = 1
+	N_resp_draws = int(1e4)
+	defaults = {
+		"E_resp_array": E_resp_array
+		"N_resp_draws": N_resp_draws
+		"response": R_2D
+	}
+	matrix = CalcResponse(E1s,E2s,**defaults)
+	N_final = int(len(E_resp_array)/6)
+	matrix_rebinned, E_resp_array_rebinned = rebin_and_shift(rebin_and_shift(matrix, E_resp_array, N_final=N_final, rebin_axis=0), E_resp_array, N_final=N_final, rebin_axis=1)
+	write_mama_2D(matrix_rebinned, "folded_2D_2gammas1and9MeV.m", E_resp_array_rebinned, E_resp_array_rebinned)
 
-N_final = int(len(E_resp_array)/6)
-matrix_rebinned, E_resp_array_rebinned = rebin_and_shift(rebin_and_shift(matrix, E_resp_array, N_final=N_final, rebin_axis=0), E_resp_array, N_final=N_final, rebin_axis=1)
+if DoPlotting:
+	N_draws = 15 # number of differnt incident gammas dran
+	N_resp_draws = int(1e4) # number of draws from response function for each incident gamma
+	defaults = {
+		"E_resp_array": E_resp_array,
+		"N_resp_draws": N_resp_draws,
+		"response": R_2D
+	}
 
+	# create plots
+	f_max, ax_mat = plt.subplots(2,3,figsize=(20,15))
 
-#write_mama_2D(matrix_rebinned, "folded_2D_2gammas1and9MeV.m", E_resp_array_rebinned, E_resp_array_rebinned)
+	# subplot
+	ax = ax_mat[0,0]
+	E1s = 1*1e3*np.ones(N_draws) # E1 = xx MeV
+	E2s = Emax - E1s
+	matrix = CalcResponse(E1s,E2s,**defaults)
+	# rebin result for plotting
+	N_final = int(len(E_resp_array)/6)
+	matrix_rebinned, E_resp_array_rebinned = rebin_and_shift(rebin_and_shift(matrix, E_resp_array, N_final=N_final, rebin_axis=0), E_resp_array, N_final=N_final, rebin_axis=1)
+	ax.pcolormesh(E_resp_array, E_resp_array, matrix, norm=LogNorm())
+	ax.set_title("E1 = 1 MeV")
 
-f_max, ax_mat = plt.subplots(1,1)
-ax_mat.pcolormesh(E_resp_array, E_resp_array, matrix, norm=LogNorm())
-plt.show()
+	# subplot
+	ax = ax_mat[0,1]
+	E1s = 3.5*1e3*np.ones(N_draws) # E1 = xx MeV
+	E2s = Emax - E1s
+	matrix = CalcResponse(E1s,E2s,**defaults)
+	# rebin result for plotting
+	N_final = int(len(E_resp_array)/6)
+	matrix_rebinned, E_resp_array_rebinned = rebin_and_shift(rebin_and_shift(matrix, E_resp_array, N_final=N_final, rebin_axis=0), E_resp_array, N_final=N_final, rebin_axis=1)
+	ax.pcolormesh(E_resp_array, E_resp_array, matrix, norm=LogNorm())
+	ax.set_title("E1 = 3.5 MeV")
 
+	# subplot
+	ax = ax_mat[0,2]
+	E1s = 5*1e3*np.ones(N_draws) # E1 = xx MeV
+	E2s = Emax - E1s
+	matrix = CalcResponse(E1s,E2s,**defaults)
+	# rebin result for plotting
+	N_final = int(len(E_resp_array)/6)
+	matrix_rebinned, E_resp_array_rebinned = rebin_and_shift(rebin_and_shift(matrix, E_resp_array, N_final=N_final, rebin_axis=0), E_resp_array, N_final=N_final, rebin_axis=1)
+	ax.pcolormesh(E_resp_array, E_resp_array, matrix, norm=LogNorm())
+	ax.set_title("E1 = 5 MeV")
 
+	# subplot
+	ax = ax_mat[1,0]
+	E1s = np.random.uniform(low=Emin, high=Emax, size=N_draws) # uniform distribution of E1s
+	E2s = Emax - E1s
+	matrix = CalcResponse(E1s,E2s,**defaults)
+	# rebin result for plotting
+	N_final = int(len(E_resp_array)/6)
+	matrix_rebinned, E_resp_array_rebinned = rebin_and_shift(rebin_and_shift(matrix, E_resp_array, N_final=N_final, rebin_axis=0), E_resp_array, N_final=N_final, rebin_axis=1)
+	ax.pcolormesh(E_resp_array, E_resp_array, matrix, norm=LogNorm())
+	ax.set_title("E1 = uniform")
 
+	# subplot
+	ax = ax_mat[1,1]
+	Emid = (Emax+Emin)/2
+	E1s = np.random.triangular(left=Emin, mode=Emid, right=Emax, size=N_draws) # E1 = 1 MeV
+	E2s = Emax - E1s
+	matrix = CalcResponse(E1s,E2s,**defaults)
+	# rebin result for plotting
+	N_final = int(len(E_resp_array)/6)
+	matrix_rebinned, E_resp_array_rebinned = rebin_and_shift(rebin_and_shift(matrix, E_resp_array, N_final=N_final, rebin_axis=0), E_resp_array, N_final=N_final, rebin_axis=1)
+	ax.pcolormesh(E_resp_array, E_resp_array, matrix, norm=LogNorm())
+	ax.set_title("E1 = triangle (Emid={:.2f})".format(Emid))
 
+	# subplot
+	ax = ax_mat[1,2]
+	Emid = (Emax)/2
+	E1s = np.random.triangular(left=Emin, mode=Emid, right=Emax, size=N_draws) # E1 = 1 MeV
+	E2s = Emax - E1s
+	matrix = CalcResponse(E1s,E2s,**defaults)
+	# rebin result for plotting
+	N_final = int(len(E_resp_array)/6)
+	matrix_rebinned, E_resp_array_rebinned = rebin_and_shift(rebin_and_shift(matrix, E_resp_array, N_final=N_final, rebin_axis=0), E_resp_array, N_final=N_final, rebin_axis=1)
+	ax.pcolormesh(E_resp_array, E_resp_array, matrix, norm=LogNorm())
+	ax.set_title("E1 = triangle (Emid={:.2f})".format(Emid))
+
+	for ax in ax_mat.flatten():
+		ax.set_xlabel("Eg")
+		ax.set_ylabel(r"\sum Eg = Ex")
+
+	plt.tight_layout()
+	plt.show()
