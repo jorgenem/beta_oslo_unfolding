@@ -1,0 +1,4 @@
+notes.tex
+
+
+How about making a rank-4 response tensor for each multiplicity? There is however still 
