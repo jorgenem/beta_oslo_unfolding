@@ -1,4 +1,12 @@
 notes.tex
 
 
-How about making a rank-4 response tensor for each multiplicity? There is however still 
+How about making a rank-4 response tensor for each multiplicity? There is however still an ambiguity in the Eg_2, Eg_3 etc assignments for M larger than 2, which will require averaging. Should be exact for M=2 though, so this may be a good test case.
+
+
+TODO:
+
+1) Test an iterative unfolding of an M=2 test spectrum (start with something "easy") using the gridded rank-4 folding tensor.
+2) Email Sean and ask about more details of the machine learning (neural network) scheme he has tried already. What type of problem is this in terms of machine learning? Classification or regression?
+3) Think about what the possibilities are for per-event unfolding. Is it mathematically possible to back-trace to a probability distribution of Ex_true, Eg_true based on Ex_folded, Eg_folded, for a single event? 
+->	3.1) If we figure out a way, test it first on a 1-D unfolding problem like standard Oslo.
