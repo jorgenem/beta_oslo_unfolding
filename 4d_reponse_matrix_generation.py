@@ -86,7 +86,7 @@ np.random.seed(2)
 Emin = 100
 Emax = 10*1e3
 
-DoPlottingM1 = False # not yet programmed
+DoPlottingM1 = False
 DoPlottingM2 = False
 DoPlottingM3 = False
 DoPlottingM4 = True
@@ -115,6 +115,83 @@ defaults = {
 	"N_resp_draws": N_resp_draws,
 	"response": R_2D
 }
+if DoPlottingM1:
+	# create plots
+	f_max, ax_mat = plt.subplots(2,3,figsize=(20,15))
+
+	# subplot
+	ax = ax_mat[0,0]
+	E1s = 1*1e3*np.ones(N_draws) # E1 = xx MeV
+	matrix = CalcResponse(E1s,**defaults)
+	# rebin result for plotting
+	N_final = int(len(E_resp_array)/6)
+	matrix_rebinned, E_resp_array_rebinned = rebin_and_shift(rebin_and_shift(matrix, E_resp_array, N_final=N_final, rebin_axis=0), E_resp_array, N_final=N_final, rebin_axis=1)
+	ax.pcolormesh(E_resp_array, E_resp_array, matrix, norm=LogNorm())
+	ax.set_title("E1 = 1 MeV")
+
+	# subplot
+	ax = ax_mat[0,1]
+	E1s = 3.5*1e3*np.ones(N_draws) # E1 = xx MeV
+	matrix = CalcResponse(E1s,**defaults)
+	# rebin result for plotting
+	N_final = int(len(E_resp_array)/6)
+	matrix_rebinned, E_resp_array_rebinned = rebin_and_shift(rebin_and_shift(matrix, E_resp_array, N_final=N_final, rebin_axis=0), E_resp_array, N_final=N_final, rebin_axis=1)
+	ax.pcolormesh(E_resp_array, E_resp_array, matrix, norm=LogNorm())
+	ax.set_title("E1 = 3.5 MeV")
+
+	# subplot
+	ax = ax_mat[0,2]
+	E1s = 5*1e3*np.ones(N_draws) # E1 = xx MeV
+	matrix = CalcResponse(E1s,**defaults)
+	# rebin result for plotting
+	N_final = int(len(E_resp_array)/6)
+	matrix_rebinned, E_resp_array_rebinned = rebin_and_shift(rebin_and_shift(matrix, E_resp_array, N_final=N_final, rebin_axis=0), E_resp_array, N_final=N_final, rebin_axis=1)
+	ax.pcolormesh(E_resp_array, E_resp_array, matrix, norm=LogNorm())
+	ax.set_title("E1 = 5 MeV")
+
+	# subplot
+	ax = ax_mat[1,0]
+	E1s = np.random.uniform(low=Emin, high=Emax, size=N_draws) # uniform distribution of E1s
+	matrix = CalcResponse(E1s,**defaults)
+	# rebin result for plotting
+	N_final = int(len(E_resp_array)/6)
+	matrix_rebinned, E_resp_array_rebinned = rebin_and_shift(rebin_and_shift(matrix, E_resp_array, N_final=N_final, rebin_axis=0), E_resp_array, N_final=N_final, rebin_axis=1)
+	ax.pcolormesh(E_resp_array, E_resp_array, matrix, norm=LogNorm())
+	ax.set_title("E1 = uniform")
+
+	# subplot
+	ax = ax_mat[1,1]
+	Emid = (Emax+Emin)/2
+	E1s = np.random.triangular(left=Emin, mode=Emid, right=Emax, size=N_draws) # E1 = 1 MeV
+	matrix = CalcResponse(E1s,**defaults)
+	# rebin result for plotting
+	N_final = int(len(E_resp_array)/6)
+	matrix_rebinned, E_resp_array_rebinned = rebin_and_shift(rebin_and_shift(matrix, E_resp_array, N_final=N_final, rebin_axis=0), E_resp_array, N_final=N_final, rebin_axis=1)
+	ax.pcolormesh(E_resp_array, E_resp_array, matrix, norm=LogNorm())
+	ax.set_title("E1 = triangle (Emid={:.2f}) MeV".format(Emid/1e3))
+
+	# subplot
+	ax = ax_mat[1,2]
+	Emid = (Emax)
+	E1s = np.random.triangular(left=Emin, mode=Emid, right=Emax, size=N_draws) # E1 = 1 MeV
+	matrix = CalcResponse(E1s,**defaults)
+	# rebin result for plotting
+	N_final = int(len(E_resp_array)/6)
+	matrix_rebinned, E_resp_array_rebinned = rebin_and_shift(rebin_and_shift(matrix, E_resp_array, N_final=N_final, rebin_axis=0), E_resp_array, N_final=N_final, rebin_axis=1)
+	ax.pcolormesh(E_resp_array, E_resp_array, matrix, norm=LogNorm())
+	ax.set_title("E1 = triangle (Emid={:.2f}) MeV".format(Emid/1e3))
+
+	for ax in ax_mat.flatten():
+		ax.set_xlabel("Eg [keV]")
+		ax.set_ylabel(r"\sum Eg = Ex [keV]")
+
+	plt.tight_layout()
+	plt.subplots_adjust(top=0.93)
+	plt.suptitle("Multiplicity 1")
+	plt.savefig("resp_M1.png")
+	plt.show()
+
+
 if DoPlottingM2:
 	# create plots
 	f_max, ax_mat = plt.subplots(2,3,figsize=(20,15))
