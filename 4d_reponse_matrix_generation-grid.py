@@ -37,6 +37,18 @@ with open(fname_resp) as file:
             break
 
 
+    
+resp = np.array(resp)
+# Name the columns for ease of reading
+FWHM = resp[:,1]
+eff = resp[:,2]
+pf = resp[:,3]
+pc = resp[:,4]
+ps = resp[:,5]
+pd = resp[:,6]
+pa = resp[:,7]
+
+
 
 
 # plt.pcolormesh(E_resp_array, E_resp_array, R_2D, norm=LogNorm())

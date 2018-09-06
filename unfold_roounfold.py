@@ -19,21 +19,52 @@ fname_resp_mat = 'response_matrix-sun2015.m'
 R_2D, cal_resp, E_resp_array, tmp = read_mama_2D(fname_resp_mat)
 # R_2D = div0(R_2D , R_2D.sum(rebin_axis=1))
 
+
+# Read efficiency and other 1-D response variables:
+resp = []
+with open(fname_resp) as file:
+    # Read line by line as there is crazyness in the file format
+    lines = file.readlines()
+    for i in range(4,len(lines)):
+        try:
+            row = np.array(lines[i].split(), dtype="double")
+            resp.append(row)
+        except:
+            break
+
+resp = np.array(resp)
+# Name the columns for ease of reading
+FWHM = resp[:,1]
+eff = resp[:,2]
+pf = resp[:,3]
+pc = resp[:,4]
+ps = resp[:,5]
+pd = resp[:,6]
+pa = resp[:,7]
+
+
+
 # Assumed lower threshold for gammas in response matrix
 E_thres = 100
 i_thres = np.argmin(np.abs(E_resp_array - E_thres))
 R_2D[:,:i_thres] = 0
 
 print("Haking an efficiency")
-eff = 0.95
+# eff = 0.95
 for i in range(R_2D.shape[0]):
 	norm = R_2D[i,:].sum()
 	# Hack an efficiency
-	norm *=  eff
+	norm *=  eff[i]
 	if(norm>0):
 		R_2D[i,:] = R_2D[i,:] / (norm)
 	else:
 		R_2D[i,:] = 0
+
+
+
+
+
+
 
 # f_cmp, ax_cmp = plt.subplots(1,1)
 # ax_cmp.plot(E_resp_array, R_2D[400,:])
