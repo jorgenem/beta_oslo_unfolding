@@ -14,8 +14,8 @@ from ROOT import RooUnfoldBayes
 # from ROOT import RooUnfoldInvert
 
 
-fname_resp = 'resp-sun2015.dat'
-fname_resp_mat = 'response_matrix-sun2015.m'
+fname_resp = 'resp-SuN2015-20keV-1p0FWHM.dat'
+fname_resp_mat = 'response_matrix-SuN2015-20keV-1p0FWHM.dat'
 R_2D, cal_resp, E_resp_array, tmp = read_mama_2D(fname_resp_mat)
 # R_2D = div0(R_2D , R_2D.sum(rebin_axis=1))
 
@@ -42,8 +42,6 @@ ps = resp[:,5]
 pd = resp[:,6]
 pa = resp[:,7]
 
-
-
 # Assumed lower threshold for gammas in response matrix
 E_thres = 100
 i_thres = np.argmin(np.abs(E_resp_array - E_thres))
@@ -54,16 +52,11 @@ print("Haking an efficiency")
 for i in range(R_2D.shape[0]):
 	norm = R_2D[i,:].sum()
 	# Hack an efficiency
-	norm *=  eff[i]
+	norm *=  0.95 #eff[i]
 	if(norm>0):
 		R_2D[i,:] = R_2D[i,:] / (norm)
 	else:
 		R_2D[i,:] = 0
-
-
-
-
-
 
 
 # f_cmp, ax_cmp = plt.subplots(1,1)
@@ -119,10 +112,14 @@ Eg_choose = np.array([(Eg,cnt(Eg)) for Eg in Egs_in])
 # Fill true and measured histograms
 for Eg in Eg_choose:
 	i_Eg_choose = np.argmin(np.abs(E_resp_array - Eg[0]))
-	ncounts = np.random.normal(loc=Eg[1],scale=np.sqrt(Eg[1])) # immitate statistical fluctuations of measurement
+	# # immitate statistical fluctuations of incident gamma rays
+	# ncounts = np.random.normal(loc=Eg[1],scale=np.sqrt(Eg[1])) 
+	ncounts = Eg[1]
 	for i in range(Nbins):
 		Ei = E_resp_array[i]
 		ncounts_ = ncounts * R_2D[i_Eg_choose,i]
+		# immitate statistical fluctuations of response gamma rays
+		ncounts_ = np.random.normal(loc=ncounts_,scale=np.sqrt(ncounts_)) 
 		hMeas.Fill(Ei,ncounts_)
 	hTrue.Fill(Eg[0],Eg[1])
 
