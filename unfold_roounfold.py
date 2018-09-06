@@ -47,14 +47,10 @@ E_thres = 100
 i_thres = np.argmin(np.abs(E_resp_array - E_thres))
 R_2D[:,:i_thres] = 0
 
-print("Haking an efficiency")
-# eff = 0.95
 for i in range(R_2D.shape[0]):
 	norm = R_2D[i,:].sum()
-	# Hack an efficiency
-	norm *=  0.95 #eff[i]
 	if(norm>0):
-		R_2D[i,:] = R_2D[i,:] / (norm)
+		R_2D[i,:] = R_2D[i,:] / norm * eff[i]
 	else:
 		R_2D[i,:] = 0
 
@@ -81,17 +77,23 @@ hMeas= TH1D ("meas", "Test Measured", Nbins, Emin, Emax);
 print("==================================== TRAIN ====================================")
 response= RooUnfoldResponse (hMeas, hTrue);
 
-for i in range(Nbins):
-	for j in range(Nbins):
-		Ei = E_resp_array[i]
-		Ej = E_resp_array[j]
+for i in range(Nbins): # x_true
+	Ei = E_resp_array[i] # x_true
+	for j in range(Nbins): # x_measured
+		Ej = E_resp_array[j] # x_measured
 		mc = R_2D[i,j]
+		# response.Fill (x_measured, x_true)
 		response.Fill (Ej, Ei, mc);
+	# account for eff < 1
+	eff_ = R_2D[i,:].sum()
+	pmisses = 1-eff_ # probability of misses
+	response.Miss(Ei,pmisses)
+
 
 
 print("==================================== TEST =====================================")
 
-# "True" Eg in keV, counts
+# # "True" Eg in keV, counts
 # Eg_choose = np.array([[4000,2000]])
 
 # Eg_choose = np.array([[4000,2000],
