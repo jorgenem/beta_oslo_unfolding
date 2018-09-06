@@ -30,6 +30,22 @@ def read_mama_2D(filename):
                                                     # center-bin everywhere. 
     return matrix, cal, y_array, x_array # Returning y (Ex) first as this is axis 0 in matrix language
 
+def read_mama_1D(filename):
+    # Reads a MAMA spectrum file and returns the spectrum as a numpy array, 
+    # as well as a list containing the calibration coefficients
+    # and 1-D arrays of calibrated x values for plotting and similar.
+    with open(filename) as file:
+        lines = file.readlines()
+        a0 = float(lines[6].split(",")[1]) # calibration
+        a1 = float(lines[6].split(",")[2]) # coefficients [keV]
+        a2 = float(lines[6].split(",")[3]) # coefficients [keV]
+        N = int(lines[8][15:]) +1 # 0 is first index
+        cal = {"a0x":a0, "a1x":a1, "a2x":a2}
+    x_array = np.linspace(0, N-1, N)
+    x_array = cal["a0x"] + cal["a1x"]*x_array + cal["a2x"]*x_array**2
+    # Read the rest:
+    array = np.genfromtxt(filename, comments="!")
+    return array, cal, x_array
 
 def write_mama_2D(matrix, filename, y_array, x_array, comment=""):
     import time
