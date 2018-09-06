@@ -3,8 +3,7 @@ import numpy as np
 
 def read_mama_2D(filename):
     # Reads a MAMA matrix file and returns the matrix as a numpy array, 
-    # as well as a list containing the four calibration coefficients
-    # (ordered as [bx, ax, by, ay] where Ei = ai*channel_i + bi)
+    # as well as a list containing the calibration coefficients
     # and 1-D arrays of calibrated x and y values for plotting and similar.
     matrix = np.genfromtxt(filename, skip_header=10, skip_footer=1)
     cal = {}
