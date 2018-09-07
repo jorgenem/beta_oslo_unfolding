@@ -118,16 +118,18 @@ Emax = 10*1e3
 
 
 # writing results to mama
-N_draws = 30
-N_resp_draws = int(1e4)
+N_draws = 500
+N_resp_draws = int(1e3)
 defaults = {
 	"E_resp_array": E_resp_array,
 	"N_resp_draws": N_resp_draws,
 	"response": R_2D
 }
 # Draw some energy pairs:
-E1s = np.random.uniform(low=0, high=Emax, size=N_draws) # uniform distribution of E1s
-E2s = np.random.uniform(low=0, high=Emax, size=N_draws) # uniform distribution of E2s
+# E1s = np.random.uniform(low=0, high=Emax, size=N_draws) # uniform distribution of E1s
+# E2s = np.random.uniform(low=0, high=Emax, size=N_draws) # uniform distribution of E2s
+E1s = np.random.normal(loc=1700, scale=70, size=N_draws) # uniform distribution of E1s
+E2s = np.random.normal(loc=1300, scale=50, size=N_draws) # uniform distribution of E2s
 N_final = int(len(E_resp_array)/1)
 # Calculate, rebin and write folded spectrum:
 matrix = CalcResponseEgaxes(E1s,E2s,**defaults)

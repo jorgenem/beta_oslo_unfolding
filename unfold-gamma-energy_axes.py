@@ -17,10 +17,10 @@ First order of business is to find out if two successive 1D unfoldings do the tr
 # Read response matrix:
 fname_resp_mat = "response_matrix-SuN2015-20keV-1p0FWHM.dat"
 fname_resp_dat = "resp-SuN2015-20keV-1p0FWHM.dat"
-R_2D, cal_resp, E_array_resp, tmp = read_mama_2D(fname_resp_mat)
+R_2D, cal_resp, E_resp_array, tmp = read_mama_2D(fname_resp_mat)
 # Assumed lower threshold for gammas in response matrix
 E_thres = 100
-i_thres = np.argmin(np.abs(E_array_resp - E_thres))
+i_thres = np.argmin(np.abs(E_resp_array - E_thres))
 R_2D[:,:i_thres] = 0
 # Normalize:
 for i in range(R_2D.shape[0]):
@@ -32,7 +32,7 @@ for i in range(R_2D.shape[0]):
 
 # Allocate plots and plot response matrix:
 f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2,2)
-ax1.pcolormesh(E_array_resp, E_array_resp, R_2D, norm=LogNorm())
+ax1.pcolormesh(E_resp_array, E_resp_array, R_2D, norm=LogNorm())
 ax1.set_title("Response matrix")
 
 
@@ -84,44 +84,120 @@ ax3.set_title("Folded (Eg1, Eg2) dist")
 # matrix_unfolded, E_array_unfolded, tmp = unfold(matrix_folded, E_array_folded, E_array_folded, fname_resp_dat, fname_resp_mat, verbose=True, plot=True)
 
 
-array_raw = matrix_folded[300,:]
 
-# Run folding iterations:
-Nit = 5
-for iteration in range(Nit):
-    if iteration == 0:
-        # matrix_unfolded = matrix_folded
-        array_unfolded = array_raw
-    else:
-        print("array_raw.shape =", array_raw.shape, flush=True)
-        print("array_folded.shape =", array_folded.shape, flush=True)
-        array_unfolded = array_unfolded + (array_raw.reshape(1,len(array_raw)) - array_folded)
-        print("array_unfolded.shape =", array_unfolded.shape, flush=True)
-
-    # Try applying smoothing to the unfolded array before folding:
-    # print("array_unfolded.shape =", array_unfolded.shape, flush=True)
-    print("array_unfolded.sum() =", array_unfolded.sum())
-    array_unfolded = shift_and_smooth3D(array_unfolded.reshape(1,len(array_unfolded)), E_array_folded, FWHM=np.ones(len(array_unfolded)), p=np.ones(len(array_unfolded)), shift=0, smoothing=True)
-    array_unfolded.reshape(array_unfolded.size)
-    print("array_unfolded.sum() =", array_unfolded.sum())
-
-    array_folded = np.dot(R_2D.T, array_unfolded.T).T # Have to do some transposing to get the axis orderings right for matrix product
-    # 20171110: Tried transposing R. Was it that simple? Immediately looks good.
-    #           Or at least much better. There is still something wrong giving negative counts left of peaks.
-    #           Seems to come from unfolding and not from compton subtraction
-
-    # Calculate reduced chisquare of the "fit" between folded-unfolded matrix and original raw
-    # chisquares[iteration] = div0(np.power(foldmat-matrix_folded,2),np.where(matrix_folded>0,matrix_folded,0)).sum() / Ndof
-    # if verbose:
-        # print("Folding iteration = {}, chisquare = {}".format(iteration,chisquares[iteration]), flush=True)
+from ROOT import gRandom, TH1, TH2, TH1D, TH2D, cout, gROOT, TCanvas, TLegend
+from ROOT import RooUnfoldResponse
+from ROOT import RooUnfoldBayes
 
 
 
 
-# ax4.pcolormesh(E_array_folded, E_array_folded, foldmat, norm=LogNorm())
-ax4.plot(E_array_folded, array_raw, label="raw")
-ax4.plot(E_array_folded, array_folded, label="folded")
-ax4.plot(E_array_folded, array_unfolded, label="unfolded")
+
+Nbins = len(E_resp_array)
+Emin = E_resp_array[0]
+Emax = E_resp_array[-1]
+
+matrix_unfolded = np.zeros((Nbins,Nbins))
+
+
+
+hTrue= TH1D ("true", "Test Truth",    Nbins, Emin, Emax);
+hMeas= TH1D ("meas", "Test Measured", Nbins, Emin, Emax);
+
+print("==================================== TRAIN ====================================")
+response= RooUnfoldResponse (hMeas, hTrue);
+
+for i in range(Nbins): # x_true
+    Ei = E_resp_array[i] # x_true
+    for j in range(Nbins): # x_measured
+        Ej = E_resp_array[j] # x_measured
+        mc = R_2D[i,j]
+        # response.Fill (x_measured, x_true)
+        response.Fill (Ej, Ei, mc);
+    # account for eff < 1
+    eff_ = R_2D[i,:].sum()
+    pmisses = 1-eff_ # probability of misses
+    response.Miss(Ei,pmisses)
+
+
+
+print("==================================== TEST =====================================")
+
+# # "True" Eg in keV, counts
+# Eg_choose = np.array([[4000,2000]])
+
+# Eg_choose = np.array([[4000,2000],
+#                       [2000,1000],
+#                       [1500,1000],
+#                       [3000,500],
+#                       ]) 
+
+# Eg_min = 1e3
+# i_Eg_choose = np.argmin(np.abs(E_resp_array - Eg_min))
+# N_in=40
+# Egs_in = E_resp_array[i_Eg_choose:i_Eg_choose+N_in]
+# def cnt(E):
+#     # some dummy funciton to create a number of counts
+#     return (0.2*(E-Egs_in[int(N_in/2)])**2 + 0.05* E)/100
+# Eg_choose = np.array([(Eg,cnt(Eg)) for Eg in Egs_in])
+
+# Fill measured hist with row from matrix_folded
+
+
+
+
+# == This part needs to be looped over the rows i_Eg2, then followed by an opposite loop+unfolding over i_Eg1. ==
+# i_Eg2 = 250 # Pick a test row
+# ax4.plot(E_array_folded, matrix_folded[i_Eg2,:])
+for i_Eg2 in range(Nbins):#range(245,255):
+    print("Now doing i_Eg2 =", i_Eg2, flush=True)
+    for i in range(Nbins):
+        Ei = E_resp_array[i]
+        hMeas.Fill(Ei,matrix_folded[i_Eg2,i])
+    
+    # hack to recalculate the Uncertainties now, after the histogram is filled
+    hMeas.Sumw2(False)
+    hMeas.Sumw2(True)
+    # hTrue.Sumw2(False) # doesn't work yet?
+    # hTrue.Sumw2(True)  # doesn't work yet?
+    
+    # print("==================================== UNFOLD ===================================")
+    Niterations = 5
+    unfold= RooUnfoldBayes     (response, hMeas, Niterations);    #  OR
+    # unfold= RooUnfoldSvd     (response, hMeas, 20);     #  OR
+    #unfold= RooUnfoldTUnfold (response, hMeas);         #  OR
+    # unfold= RooUnfoldIds     (response, hMeas, 3);      #  OR
+    # unfold= RooUnfoldInvert    (response, hMeas);      #  OR
+    
+    hReco= unfold.Hreco();
+    # unfold.PrintTable (cout, hTrue);
+    
+    matrix_unfolded[i_Eg2,:] = np.array(hReco)[0:Nbins]
+
+# c1 = TCanvas()
+# hReco.Draw();
+# hMeas.SetLineColor(2)
+# hMeas.Draw("same");
+# hTrue.SetLineColor(8);
+# hTrue.Draw("same");
+# # c1.SetLogy()
+
+# legend = TLegend(0.8,0.8,0.9,0.9);
+# legend.AddEntry(hReco,"Unfolded","l");
+# legend.AddEntry(hMeas,"Measured","l");
+# legend.AddEntry(hTrue,"True","l");
+# legend.Draw();
+
+
+
+
+
+# Back to Python: Get the resulting matrix and plot:
+
+ax4.pcolormesh(E_array_folded, E_array_folded, matrix_unfolded, norm=LogNorm())
+# ax4.plot(E_array_folded, array_raw, label="raw")
+# ax4.plot(E_array_folded, array_folded, label="folded")
+# ax4.plot(E_resp_array, array_unfolded[0:Nbins], label="unfolded")
 ax4.legend()
 
 
