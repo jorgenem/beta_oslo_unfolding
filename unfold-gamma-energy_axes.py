@@ -1,10 +1,10 @@
 from utilities import *
-import pyunfold as pu
 import numpy as np 
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 
-from pyunfold.priors import uniform_prior
+# import pyunfold as pu
+# from pyunfold.priors import uniform_prior
 
 
 """ 
@@ -93,8 +93,19 @@ for iteration in range(Nit):
         # matrix_unfolded = matrix_folded
         array_unfolded = array_raw
     else:
-        array_unfolded = array_unfolded + (array_raw - array_folded)
-    array_folded = np.dot(R_2D.T, array_unfolded) # Have to do some transposing to get the axis orderings right for matrix product
+        print("array_raw.shape =", array_raw.shape, flush=True)
+        print("array_folded.shape =", array_folded.shape, flush=True)
+        array_unfolded = array_unfolded + (array_raw.reshape(1,len(array_raw)) - array_folded)
+        print("array_unfolded.shape =", array_unfolded.shape, flush=True)
+
+    # Try applying smoothing to the unfolded array before folding:
+    # print("array_unfolded.shape =", array_unfolded.shape, flush=True)
+    print("array_unfolded.sum() =", array_unfolded.sum())
+    array_unfolded = shift_and_smooth3D(array_unfolded.reshape(1,len(array_unfolded)), E_array_folded, FWHM=np.ones(len(array_unfolded)), p=np.ones(len(array_unfolded)), shift=0, smoothing=True)
+    array_unfolded.reshape(array_unfolded.size)
+    print("array_unfolded.sum() =", array_unfolded.sum())
+
+    array_folded = np.dot(R_2D.T, array_unfolded.T).T # Have to do some transposing to get the axis orderings right for matrix product
     # 20171110: Tried transposing R. Was it that simple? Immediately looks good.
     #           Or at least much better. There is still something wrong giving negative counts left of peaks.
     #           Seems to come from unfolding and not from compton subtraction
@@ -110,7 +121,7 @@ for iteration in range(Nit):
 # ax4.pcolormesh(E_array_folded, E_array_folded, foldmat, norm=LogNorm())
 ax4.plot(E_array_folded, array_raw, label="raw")
 ax4.plot(E_array_folded, array_folded, label="folded")
-# ax4.plot(E_array_folded, array_unfolded, label="unfolded")
+ax4.plot(E_array_folded, array_unfolded, label="unfolded")
 ax4.legend()
 
 
