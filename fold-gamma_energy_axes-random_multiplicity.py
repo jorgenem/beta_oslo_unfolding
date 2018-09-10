@@ -16,6 +16,14 @@ max detected multiplicity.), and saves both to file.
 
 """
 
+# Global settings:
+pileup = False # Choose whether to simulate the effects of detector pileup
+N_events = 5000 # Number of events to simulate
+
+Mt_max = 4#5 # Max true multiplicity
+Mf_max = 4 # Max detector multiplicity
+
+
 
 # == Read and set up response matrix ==
 
@@ -72,9 +80,7 @@ for i in range(R_2D.shape[0]):
 
 
 # === Generate events ===
-N_events = 5
-fname_ev_t = "generated_events-true-Emax2MeV-{:d}_events.npy".format(N_events)
-Mt_max = 5 # Max true multiplicity
+fname_ev_t = "generated_events-true-Emax2MeV-{:d}_events-pileup_is_{:s}.npy".format(N_events, "on" if pileup else "off")
 try:
 	events_t = np.load(fname_ev_t)
 except:
@@ -117,6 +123,11 @@ def FoldEg(Egs_t, Mf_max, Eg_arr, response, pileup=True):
 				map_to_pileup[i_t] = counter_nopile
 				counter_nopile += 1
 				break
+
+			# Also make sure no more than 4 gammas remain, by
+			# setting pileup probability to 1 if we already have 4 non-piled
+			if counter_nopile == 4:
+				p_pile = 1
 
 			r_pile = np.random.uniform()
 			if r_pile < p_pile:
@@ -167,10 +178,9 @@ def FoldEg(Egs_t, Mf_max, Eg_arr, response, pileup=True):
 	return Egs_folded
 
 
-Mf_max = 4 # Max detector multiplicity
 
 
-fname_ev_f = "generated_events-folded-Emax2MeV-{:d}_events.npy".format(N_events)
+fname_ev_f = "generated_events-folded-Emax2MeV-{:d}_events-pileup_is_{:s}.npy".format(N_events, "on" if pileup else "off")
 try:
 	events_f = np.load(fname_ev_f)
 except:
@@ -184,50 +194,14 @@ print("Events folded:", flush=True)
 print(events_f)
 
 
-sys.exit(0)
+
+
+# === Unfold the events ===
 
 
 
 
 
-
-# writing results to mama
-N_draws = 500
-N_resp_draws = int(1e3)
-defaults = {
-	"E_resp_array": E_resp_array,
-	"N_resp_draws": N_resp_draws,
-	"response": R_2D
-}
-# Draw some energy pairs:
-# E1s = np.random.uniform(low=0, high=Emax, size=N_draws) # uniform distribution of E1s
-# E2s = np.random.uniform(low=0, high=Emax, size=N_draws) # uniform distribution of E2s
-E1s = np.random.normal(loc=1700, scale=70, size=N_draws) # uniform distribution of E1s
-E2s = np.random.normal(loc=1300, scale=50, size=N_draws) # uniform distribution of E2s
-N_final = int(len(E_resp_array)/1)
-# Calculate, rebin and write folded spectrum:
-matrix = CalcResponseEgaxes(E1s,E2s,**defaults)
-# matrix_rebinned, E_resp_array_rebinned = rebin_and_shift_memoryguard(rebin_and_shift_memoryguard(matrix, E_resp_array, N_final=N_final, rebin_axis=0), E_resp_array, N_final=N_final, rebin_axis=1)
-# write_mama_2D(matrix_rebinned, "folded_2D_2gammas-Egaxes.m", E_resp_array_rebinned, E_resp_array_rebinned)
-write_mama_2D(matrix, "folded_2D_2gammas-Egaxes.m", E_resp_array, E_resp_array)
-# Write true spectrum (rebinned):
-# matrix_true = np.zeros((N_final,N_final))
-matrix_true = np.zeros((len(E_resp_array),len(E_resp_array)))
-
-for E1, E2 in zip(E1s, E2s):
-	i_Eg1 = np.argmin(np.abs(E_resp_array - E1))
-	i_Eg2 = np.argmin(np.abs(E_resp_array - E2))
-	matrix_true[i_Eg1,i_Eg2] += 1
-
-write_mama_2D(matrix_true, "truth_2D_2gammas-Egaxes.m", E_resp_array, E_resp_array)
-# Plot both matrices
-f_mama, (ax_mama1, ax_mama2) = plt.subplots(2,1)
-ax_mama1.pcolormesh(E_resp_array, E_resp_array, matrix_true, norm=LogNorm())
-ax_mama2.pcolormesh(E_resp_array, E_resp_array, matrix, norm=LogNorm())
-
-
-
-plt.show()
 
 
 

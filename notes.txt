@@ -6,9 +6,13 @@ How about making a rank-4 response tensor for each multiplicity? There is howeve
 
 TODO:
 
-1) Test an iterative unfolding of an M=2 test spectrum (start with something "easy") using the gridded rank-4 folding tensor.
-2) Email Sean and ask about more details of the machine learning (neural network) scheme he has tried already. What type of problem is this in terms of machine learning? Classification or regression?
+
+Eg-axes unfolding: 
+- Write up a script that makes an event list with variable multiplicity. Store it both in true and folded versions. Make the folded version by doing one random draw from the Eg response for each gamma. Do take pileup into account by having a certain probability that two gammas are combined into one before folding.
+
+
+- Email Sean and ask about more details of the machine learning (neural network) scheme he has tried already. What type of problem is this in terms of machine learning? Classification or regression?
 -> 2.1) This might be something to look at: https://stackoverflow.com/questions/21556623/regression-with-multi-dimensional-targets#40107610
 		Also read J. V. Sparre's master thesis on gradient boosted decision trees for xsec evaluation.
-3) Think about what the possibilities are for per-event unfolding. Is it mathematically possible to back-trace to a probability distribution of Ex_true, Eg_true based on Ex_folded, Eg_folded, for a single event? 
+- Think about what the possibilities are for per-event unfolding. Is it mathematically possible to back-trace to a probability distribution of Ex_true, Eg_true based on Ex_folded, Eg_folded, for a single event? 
 ->	3.1) If we figure out a way, test it first on a 1-D unfolding problem like standard Oslo.
