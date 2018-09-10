@@ -93,16 +93,19 @@ def FoldEg(Egs, Mf_max, Eg_arr, response, pileup=True):
 	This function folds all Egs from a single event.
 	"""
 
-	# First decide the detector multiplicity for this event. It's bounded upwards by Mf (4 in case of SuN)
-	# A first approx. is a linearly increasing probability from 0 to true multiplicity for current event, 
-	# but not higher than Mf_max.
+	
 	print("Folding. True gammas =", Egs, flush=True)
-	print("Deciding multiplicity", flush=True)
-	Mt_curr = len(Egs[Egs>0])
-	Mf_curr = int(min(Mf_max, np.random.triangular(1,Mt_curr,Mt_curr))) if Mt_curr > 1 else 1 # Don't make any events with multiplicity zero. We can model the detector efficiency elsewhere.
-	print("Mt_curr =", Mt_curr, "Mf_curr =", Mf_curr, flush=True)
+	
 
 	if pileup and Mt_curr > Mf_curr:
+		# First decide the detector multiplicity for this event. It's bounded upwards by Mf (4 in case of SuN)
+		# A first approx. is a linearly increasing probability from 0 to true multiplicity for current event, 
+		# but not higher than Mf_max.
+		print("Deciding multiplicity", flush=True)
+		Mt_curr = len(Egs[Egs>0])
+		Mf_curr = int(min(Mf_max, np.random.triangular(1,Mt_curr,Mt_curr))) if Mt_curr > 1 else 1 # Don't make any events with multiplicity zero. We can model the detector efficiency elsewhere.
+		print("Mt_curr =", Mt_curr, "Mf_curr =", Mf_curr, flush=True)
+
 		# Decide which true gammas come in the same detector.
 		# Do this by drawing random pairs of indices 
 		Mf_tmp = Mt_curr
