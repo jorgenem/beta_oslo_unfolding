@@ -6,19 +6,25 @@ import sys
 
 np.random.seed(2)
 
+customLogNorm = LogNorm(vmin=1e0, vmax=3e1)
+
 """
 This script simulates events, folds and plots them 
 in histograms as function of Eg1, Eg2 etc.
 
-This version from 20180910 draws random multiplicities up to 
-M=5 in the true events and M=4 in the folded (this is SuN's 
+This version, started 20180910, draws random multiplicities up to 
+M=Mt in the true events and M=Mf in the folded (Mf=4 is SuN's 
 max detected multiplicity.), and saves both to file.
+
+It attempts to simulate pileup effects by randomly combining gammas 
+from the true events. All gammas are folded just once by a
+random draw from the response function.
 
 """
 
 # Global settings:
 pileup = False # Choose whether to simulate the effects of detector pileup
-N_events = 5000 # Number of events to simulate
+N_events = int(5*1e4) # Number of events to simulate
 
 Mt_max = 4#5 # Max true multiplicity
 Mf_max = 4 # Max detector multiplicity
@@ -196,10 +202,83 @@ print(events_f)
 
 
 
+
+# === Plot true and folded matrices as Ex-Eg ===
+f_ExEg, (ax_ExEg_true, ax_ExEg_folded) = plt.subplots(2,1)
+N_Eg = len(E_resp_array)
+N_Ex = Mt_max*N_Eg
+Ex_array = np.linspace(E_resp_array[0], Mt_max*E_resp_array[-1], N_Ex)
+
+matrix_ExEg_true = np.zeros((N_Ex,N_Eg))
+matrix_ExEg_folded = np.zeros((N_Ex,N_Eg))
+for i_ev in range(N_events):
+	Egs_t = events_t[i_ev]
+	Ex_t = Egs_t.sum()
+	for Eg_t in Egs_t[Egs_t>0]:
+		matrix_ExEg_true[np.argmin(np.abs(Ex_array-Ex_t)), np.argmin(np.abs(E_resp_array-Eg_t))] += 1
+
+	Egs_f = events_f[i_ev]
+	Ex_f = Egs_f.sum()
+	for Eg_f in Egs_f[Egs_f>0]:
+		matrix_ExEg_folded[np.argmin(np.abs(Ex_array-Ex_f)), np.argmin(np.abs(E_resp_array-Eg_f))] += 1
+
+cbar_ExEg_true = ax_ExEg_true.pcolormesh(E_resp_array, Ex_array, matrix_ExEg_true, norm=customLogNorm)
+cbar_ExEg_folded = ax_ExEg_folded.pcolormesh(E_resp_array, Ex_array, matrix_ExEg_folded, norm=customLogNorm)
+f_ExEg.colorbar(cbar_ExEg_true, ax=ax_ExEg_true)
+f_ExEg.colorbar(cbar_ExEg_folded, ax=ax_ExEg_folded)
+
+plt.show()
+
+
+
+
+
+
+
+
 # === Unfold the events ===
 
+# TODO implement some kind of pileup correction algorithm.
+# For now either neglect pileup or keep it turned off.
 
 
+# We have to sort the data according to Eg0, Eg1 etc along all axes.
+# When pileup correction is done, we have to assume some max multiplicity perhaps.
+# For now, do the first test with M=4.
+
+
+# We have the option to try variable bin sizes for the different unfolding axes.
+# If we sort the axes so that axis 0 is the most populated (all events), 
+# 1 the second most (all events with M>=2), etc., then the axes
+# will quickly become more sparsely populated.
+# I speculate that this can be amended by rebinning the last axes harder,
+# to increase statistics. It is simple enough to try different strategies and see what works best.
+
+# I am also thinking that we should try some kind of "bootstrap"-ish method to
+# avoid biasing things by always selecting certain gammas to lie along the first axis, etc.
+# If we do several unfoldings with random orderings among the gammas in each event, we can 
+# gauge the potential impact of this.
+
+
+
+# == Sort data into Mf_max or Mu_max-dimensional array ==
+# Choose dimensionality and allocate arrays
+dim_folded = (N_Eg, N_Eg, int(N_Eg/2), int(N_Eg/2))
+tensor_folded = np.zeros(dim_folded)
+print("tensor_folded.size =", tensor_folded.size*8/1024**2, "MB", flush=True)
+
+Mu_max = Mf_max # Max multiplicity of events after unfolding. Set it equal to Mf_max until pileup correction is implemented.
+dim_unfolded = (N_Eg, N_Eg, int(N_Eg/2), int(N_Eg/2))
+tensor_unfolded = np.zeros(dim_unfolded)
+print("tensor_unfolded.size =", tensor_unfolded.size*8/1024**2, "MB", flush=True)
+
+# Sort data:
+for i_ev in range(N_events):
+	tensor_folded[np.argmin(np.abs())]
+
+from ROOT import RooUnfold
+
+# == Axis 0 ==
 
 
 
