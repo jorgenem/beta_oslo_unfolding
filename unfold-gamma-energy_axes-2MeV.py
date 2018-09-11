@@ -362,6 +362,16 @@ ax8.set_ylabel("$E_x \,\mathrm{(keV)}$")
 
 
 
+# Calculate some integrals:
+print("matrix_true.sum() =", matrix_true.sum(), flush=True)
+Eg1_low, Eg1_high = 1500,1900
+Eg2_low, Eg2_high = 1150,1450
+i_Eg1_low, i_Eg1_high = np.argmin(np.abs(E_resp_array - Eg1_low)), np.argmin(np.abs(E_resp_array - Eg1_high))
+i_Eg2_low, i_Eg2_high = np.argmin(np.abs(E_resp_array - Eg2_low)), np.argmin(np.abs(E_resp_array - Eg2_high))
+print("matrix_unfolded2.sum() =", matrix_unfolded2.sum(), flush=True)
+print("matrix_unfolded2[i_Eg1_low:i_Eg1_high,i_Eg2_low:i_Eg2_high].sum() =", matrix_unfolded2[i_Eg1_low:i_Eg1_high,i_Eg2_low:i_Eg2_high].sum(), flush=True)
+print("matrix_unfolded2[i_Eg1_low:i_Eg1_high,i_Eg2_low:i_Eg2_high].sum()/matrix_true.sum() =", matrix_unfolded2[i_Eg1_low:i_Eg1_high,i_Eg2_low:i_Eg2_high].sum()/matrix_true.sum(), flush=True)
+
 
 
 
