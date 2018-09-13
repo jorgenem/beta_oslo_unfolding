@@ -211,7 +211,8 @@ print(events_f)
 
 
 # === Plot true and folded matrices as Ex-Eg ===
-f_ExEg, (ax_ExEg_true, ax_ExEg_folded) = plt.subplots(2,1)
+# f_ExEg, (ax_ExEg_true, ax_ExEg_folded) = plt.subplots(2,1)
+f_ExEg, ((ax_ExEg_true, ax_ExEg_folded, ax_ExEg2), (ax_ExEg3, ax_ExEg4, ax_ExEg5)) = plt.subplots(2,3)
 N_Eg = len(E_resp_array)
 N_Ex = Mt_max*N_Eg
 Ex_array = np.linspace(E_resp_array[0], Mt_max*E_resp_array[-1], N_Ex)
@@ -514,5 +515,26 @@ fEgEg.colorbar(cbar_EgEg3, ax=axEgEg3)
 cbar_EgEg4 = axEgEg4.pcolormesh(E_plot_x, E_plot_y, counts_unfolded2.sum(axis=sum_axes), norm=customLogNorm)
 axEgEg4.set_title("Unfolded axis 2")
 fEgEg.colorbar(cbar_EgEg4, ax=axEgEg4)
+
+
+
+
+
+# === Sorting to ExEg and plotting ===
+# TODO: This sorting requires a rebinning back to the same bin size 
+# along all gamma axes. I think the best is to distribute the counts of the
+# down-binned axes evenly among the upsampled bin size. (If that sentence makes any sense.)
+# It may be very easy to do with np.repeat(), but since the count arrays are high-dimensional
+# it requires a little bit of checking and thought.
+matrix_ExEg_unfolded0 = np.zeros((N_Ex,N_Eg))
+for i_ev in range(N_events):
+    Egs_t = events_t[i_ev]
+    Ex_t = Egs_t.sum()
+    for Eg_t in Egs_t[Egs_t>0]:
+        matrix_ExEg_true[np.argmin(np.abs(Ex_array-Ex_t)), np.argmin(np.abs(E_resp_array-Eg_t))] += 1
+
+
+
+
 
 plt.show()
