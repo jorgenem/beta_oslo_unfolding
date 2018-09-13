@@ -7,7 +7,6 @@ import sys, time
 from ROOT import gRandom, TH1, TH2, TH1D, TH2D, cout, gROOT, TCanvas, TLegend, RooUnfoldResponse, RooUnfoldBayes
 
 np.random.seed(2)
-customLogNorm = LogNorm(vmin=1e0, vmax=5e2)
 
 """
 This script simulates events, folds and plots them 
@@ -25,21 +24,23 @@ random draw from the response function.
 
 # Global settings:
 pileup = False # Choose whether to simulate the effects of detector pileup
-N_events = int(5*1e4) # Number of events to simulate
-
-Mt_max = 4#5 # Max true multiplicity
-Mf_max = 4 # Max detector multiplicity
-
 p_pile = 0.2 # Pileup probability per gamma ray
 
+N_events = int(5*1e5) # Number of events to simulate
+
+Mt_max = 2#5 # Max true multiplicity
+Mf_max = 2 # Max detector multiplicity
+
+
+customLogNorm = LogNorm(vmin=1e0, vmax=N_events)
 
 
 # == Read and set up response matrix ==
 
-# fname_resp = 'resp-SuN2015-20keV-1p0FWHM.dat'
-# fname_resp_mat = 'response_matrix-SuN2015-20keV-1p0FWHM.m'
-fname_resp = 'resp-SuN2015-50keV-1p0FWHM.dat'
-fname_resp_mat = 'response_matrix-SuN2015-50keV-1p0FWHM.m'
+fname_resp = 'resp-SuN2015-20keV-1p0FWHM.dat'
+fname_resp_mat = 'response_matrix-SuN2015-20keV-1p0FWHM.m'
+# fname_resp = 'resp-SuN2015-50keV-1p0FWHM.dat'
+# fname_resp_mat = 'response_matrix-SuN2015-50keV-1p0FWHM.m'
 R_2D, cal_resp, E_resp_array, tmp = read_mama_2D(fname_resp_mat)
 # R_2D = div0(R_2D , R_2D.sum(rebin_axis=1))
 
@@ -91,14 +92,15 @@ for i in range(R_2D.shape[0]):
 
 
 # === Generate events ===
-fname_ev_t = "generated_events-true-Emax2MeV-{:d}_events-pileup_is_{:s}.npy".format(N_events, "on" if pileup else "off")
+fname_ev_t = "generated_events-true-Emax2MeV-Mtmax2-{:d}_events-pileup_is_{:s}.npy".format(N_events, "on" if pileup else "off")
 try:
     events_t = np.load(fname_ev_t)
 except:
     events_t = np.zeros((N_events,Mt_max))
-    Eg_gaussian_centroids = np.array([700,1100,1500,1800,500])
+    Eg_gaussian_centroids = np.array([1700,1300,500,1000])
     for i_ev in range(N_events):
-        Mt_curr = np.random.randint(low=1,high=(Mt_max+1))
+        # Mt_curr = np.random.randint(low=1,high=(Mt_max+1))
+        Mt_curr = 2 # Testing, comparison to the first test we did with 2 gammas for the report
         # Egs_current = np.random.uniform(low=0, high=Emax, size=Mt_curr)
         Egs_current = np.random.normal(loc=Eg_gaussian_centroids[0:Mt_curr], scale=0.5*np.sqrt(Eg_gaussian_centroids[0:Mt_curr]), size=Mt_curr)
         events_t[i_ev,0:Mt_curr] = Egs_current
@@ -193,7 +195,7 @@ def FoldEg(Egs_t, Mf_max, Eg_arr, response, pileup=True, p_pile=0.2):
 
 
 
-fname_ev_f = "generated_events-folded-Emax2MeV-{:d}_events-pileup_is_{:s}.npy".format(N_events, "on" if pileup else "off")
+fname_ev_f = "generated_events-folded-Emax2MeV-Mtmax2-{:d}_events-pileup_is_{:s}.npy".format(N_events, "on" if pileup else "off")
 try:
     events_f = np.load(fname_ev_f)
 except:
@@ -204,7 +206,7 @@ except:
     np.save(fname_ev_f, events_f)
 
 print("Events folded:", flush=True)
-print(events_f)
+print(events_f, flush=True)
 
 
 
@@ -229,8 +231,8 @@ for i_ev in range(N_events):
     for Eg_f in Egs_f[Egs_f>0]:
         matrix_ExEg_folded[np.argmin(np.abs(Ex_array-Ex_f)), np.argmin(np.abs(E_resp_array-Eg_f))] += 1
 
-cbar_ExEg_true = ax_ExEg_true.pcolormesh(E_resp_array, Ex_array, matrix_ExEg_true, norm=customLogNorm)
-cbar_ExEg_folded = ax_ExEg_folded.pcolormesh(E_resp_array, Ex_array, matrix_ExEg_folded, norm=customLogNorm)
+cbar_ExEg_true = ax_ExEg_true.pcolormesh(E_resp_array, Ex_array, matrix_ExEg_true, norm=customLogNorm, cmap="jet")
+cbar_ExEg_folded = ax_ExEg_folded.pcolormesh(E_resp_array, Ex_array, matrix_ExEg_folded, norm=customLogNorm, cmap="jet")
 f_ExEg.colorbar(cbar_ExEg_true, ax=ax_ExEg_true)
 f_ExEg.colorbar(cbar_ExEg_folded, ax=ax_ExEg_folded)
 
@@ -269,20 +271,16 @@ f_ExEg.colorbar(cbar_ExEg_folded, ax=ax_ExEg_folded)
 
 # == Sort data into Mf_max or Mu_max-dimensional array ==
 # Choose dimensionality and allocate arrays
-dim_folded = (N_Eg, N_Eg, int(N_Eg/4), int(N_Eg/4))
+dim_folded = (N_Eg, N_Eg)
 E0f_array = np.linspace(E_resp_array[0], E_resp_array[-1], dim_folded[0])
 E1f_array = np.linspace(E_resp_array[0], E_resp_array[-1], dim_folded[1])
-E2f_array = np.linspace(E_resp_array[0], E_resp_array[-1], dim_folded[2])
-E3f_array = np.linspace(E_resp_array[0], E_resp_array[-1], dim_folded[3])
 counts_folded = np.zeros(dim_folded)
 print("counts_folded.size =", counts_folded.size*8/1024**2, "MB", flush=True)
 
 Mu_max = Mf_max # Max multiplicity of events after unfolding. Set it equal to Mf_max until pileup correction is implemented.
-dim_unfolded = (N_Eg, N_Eg, int(N_Eg/4), int(N_Eg/4))
+dim_unfolded = (N_Eg, N_Eg)
 E0u_array = np.linspace(E_resp_array[0], E_resp_array[-1], dim_unfolded[0])
 E1u_array = np.linspace(E_resp_array[0], E_resp_array[-1], dim_unfolded[1])
-E2u_array = np.linspace(E_resp_array[0], E_resp_array[-1], dim_unfolded[2])
-E3u_array = np.linspace(E_resp_array[0], E_resp_array[-1], dim_unfolded[3])
 # Don't allocate this matrix yet, it needs one copy per unfolding axis anyway
 # counts_unfolded = np.zeros(dim_unfolded)
 # print("counts_unfolded.size =", counts_unfolded.size*8/1024**2, "MB", flush=True)
@@ -293,8 +291,12 @@ counts_true = np.zeros(dim_unfolded)
 # Sort data:
 t_s = time.time()
 for i_ev in range(N_events):
-    counts_folded[np.argmin(np.abs(E0f_array-events_f[i_ev,0])),np.argmin(np.abs(E1f_array-events_f[i_ev,1])),np.argmin(np.abs(E2f_array-events_f[i_ev,2])),np.argmin(np.abs(E3f_array-events_f[i_ev,3]))] += 1
-    counts_true[np.argmin(np.abs(E0u_array-events_t[i_ev,0])),np.argmin(np.abs(E1u_array-events_t[i_ev,1])),np.argmin(np.abs(E2u_array-events_t[i_ev,2])),np.argmin(np.abs(E3u_array-events_t[i_ev,3]))] += 1
+    # Mf=2:
+    counts_folded[np.argmin(np.abs(E0f_array-events_f[i_ev,0])),np.argmin(np.abs(E1f_array-events_f[i_ev,1]))] += 1
+    counts_true[np.argmin(np.abs(E0u_array-events_t[i_ev,0])),np.argmin(np.abs(E1u_array-events_t[i_ev,1]))] += 1
+    # Mf=4: (TODO fix this hack to automate handling of all Mt, Mf choices)
+    # counts_folded[np.argmin(np.abs(E0f_array-events_f[i_ev,0])),np.argmin(np.abs(E1f_array-events_f[i_ev,1])),np.argmin(np.abs(E2f_array-events_f[i_ev,2])),np.argmin(np.abs(E3f_array-events_f[i_ev,3]))] += 1
+    # counts_true[np.argmin(np.abs(E0u_array-events_t[i_ev,0])),np.argmin(np.abs(E1u_array-events_t[i_ev,1])),np.argmin(np.abs(E2u_array-events_t[i_ev,2])),np.argmin(np.abs(E3u_array-events_t[i_ev,3]))] += 1
 t_f = time.time()
 print("Event sorting took {:.1f} s".format(t_f-t_s), flush=True)
 
@@ -330,35 +332,34 @@ for i in range(len(E0f_array)): # x_true
 
 fname_save_unf0 = fname_ev_f[0:-4]+"-unfolded0.npy"
 
+
 try:
     counts_unfolded0 = np.load(fname_save_unf0)
 except:
     counts_unfolded0 = np.zeros(dim_unfolded)
     for i_Eg1 in range(len(E1f_array)):
-        for i_Eg2 in range(len(E2f_array)):
-            for i_Eg3 in range(len(E3f_array)):
-                hMeas= TH1D ("meas", "Test Measured", len(E0f_array), Emin, Emax);
-                for i in range(len(E0f_array)):
-                    Ei = E0f_array[i]
-                    hMeas.Fill(Ei,counts_folded[i,i_Eg1,i_Eg2,i_Eg3])
-                
-                # hack to recalculate the Uncertainties now, after the histogram is filled
-                hMeas.Sumw2(False)
-                hMeas.Sumw2(True)
-                # hTrue.Sumw2(False) # doesn't work yet?
-                # hTrue.Sumw2(True)  # doesn't work yet?
-                
-                # print("==================================== UNFOLD ===================================")
-                unfold= RooUnfoldBayes     (response, hMeas, Niterations);    #  OR
-                # unfold= RooUnfoldSvd     (response, hMeas, 20);     #  OR
-                #unfold= RooUnfoldTUnfold (response, hMeas);         #  OR
-                # unfold= RooUnfoldIds     (response, hMeas, 3);      #  OR
-                # unfold= RooUnfoldInvert    (response, hMeas);      #  OR
-                
-                hReco= unfold.Hreco();
-                # unfold.PrintTable (cout, hTrue);
-                
-                counts_unfolded0[:,i_Eg1,i_Eg2,i_Eg3] = np.array(hReco)[0:len(E0f_array)]
+        hMeas= TH1D ("meas", "Test Measured", len(E0f_array), Emin, Emax);
+        for i in range(len(E0f_array)):
+            Ei = E0f_array[i]
+            hMeas.Fill(Ei,counts_folded[i,i_Eg1])
+        
+        # hack to recalculate the Uncertainties now, after the histogram is filled
+        hMeas.Sumw2(False)
+        hMeas.Sumw2(True)
+        # hTrue.Sumw2(False) # doesn't work yet?
+        # hTrue.Sumw2(True)  # doesn't work yet?
+        
+        # print("==================================== UNFOLD ===================================")
+        unfold= RooUnfoldBayes     (response, hMeas, Niterations);    #  OR
+        # unfold= RooUnfoldSvd     (response, hMeas, 20);     #  OR
+        #unfold= RooUnfoldTUnfold (response, hMeas);         #  OR
+        # unfold= RooUnfoldIds     (response, hMeas, 3);      #  OR
+        # unfold= RooUnfoldInvert    (response, hMeas);      #  OR
+        
+        hReco= unfold.Hreco();
+        # unfold.PrintTable (cout, hTrue);
+        
+        counts_unfolded0[:,i_Eg1] = np.array(hReco)[0:len(E0f_array)]
         
 
     counts_unfolded0 = np.nan_to_num(counts_unfolded0)
@@ -392,30 +393,28 @@ try:
 except:
     counts_unfolded1 = np.zeros(dim_unfolded)
     for i_Eg0 in range(len(E0f_array)):
-        for i_Eg2 in range(len(E2f_array)):
-            for i_Eg3 in range(len(E3f_array)):
-                hMeas= TH1D ("meas", "Test Measured", len(E1f_array), Emin, Emax);
-                for i in range(len(E1f_array)):
-                    Ei = E1f_array[i]
-                    hMeas.Fill(Ei,counts_folded[i_Eg0,i,i_Eg2,i_Eg3])
-                
-                # hack to recalculate the Uncertainties now, after the histogram is filled
-                hMeas.Sumw2(False)
-                hMeas.Sumw2(True)
-                # hTrue.Sumw2(False) # doesn't work yet?
-                # hTrue.Sumw2(True)  # doesn't work yet?
-                
-                # print("==================================== UNFOLD ===================================")
-                unfold= RooUnfoldBayes     (response, hMeas, Niterations);    #  OR
-                # unfold= RooUnfoldSvd     (response, hMeas, 20);     #  OR
-                #unfold= RooUnfoldTUnfold (response, hMeas);         #  OR
-                # unfold= RooUnfoldIds     (response, hMeas, 3);      #  OR
-                # unfold= RooUnfoldInvert    (response, hMeas);      #  OR
-                
-                hReco= unfold.Hreco();
-                # unfold.PrintTable (cout, hTrue);
-                
-                counts_unfolded1[i_Eg0,:,i_Eg2,i_Eg3] = np.array(hReco)[0:len(E1f_array)]
+        hMeas= TH1D ("meas", "Test Measured", len(E1f_array), Emin, Emax);
+        for i in range(len(E1f_array)):
+            Ei = E1f_array[i]
+            hMeas.Fill(Ei,counts_unfolded0[i_Eg0,i])
+        
+        # hack to recalculate the Uncertainties now, after the histogram is filled
+        hMeas.Sumw2(False)
+        hMeas.Sumw2(True)
+        # hTrue.Sumw2(False) # doesn't work yet?
+        # hTrue.Sumw2(True)  # doesn't work yet?
+        
+        # print("==================================== UNFOLD ===================================")
+        unfold= RooUnfoldBayes     (response, hMeas, Niterations);    #  OR
+        # unfold= RooUnfoldSvd     (response, hMeas, 20);     #  OR
+        #unfold= RooUnfoldTUnfold (response, hMeas);         #  OR
+        # unfold= RooUnfoldIds     (response, hMeas, 3);      #  OR
+        # unfold= RooUnfoldInvert    (response, hMeas);      #  OR
+        
+        hReco= unfold.Hreco();
+        # unfold.PrintTable (cout, hTrue);
+        
+        counts_unfolded1[i_Eg0,:] = np.array(hReco)[0:len(E1f_array)]
         
 
     counts_unfolded1 = np.nan_to_num(counts_unfolded1)
@@ -425,60 +424,60 @@ except:
 
 
 
-# == Axis 2 ==
-# Set up response:
-print("==================================== TRAIN ====================================", flush=True)
-hTrue= TH1D ("true", "Test Truth",    len(E2f_array), Emin, Emax);
-hMeas= TH1D ("meas", "Test Measured", len(E2f_array), Emin, Emax);
-response= RooUnfoldResponse (hMeas, hTrue);
+# # == Axis 2 ==
+# # Set up response:
+# print("==================================== TRAIN ====================================", flush=True)
+# hTrue= TH1D ("true", "Test Truth",    len(E2f_array), Emin, Emax);
+# hMeas= TH1D ("meas", "Test Measured", len(E2f_array), Emin, Emax);
+# response= RooUnfoldResponse (hMeas, hTrue);
 
-for i in range(len(E2f_array)): # x_true
-    Ei = E_resp_array[i] # x_true
-    for j in range(len(E2f_array)): # x_measured
-        Ej = E_resp_array[j] # x_measured
-        mc = R_2D[i,j]
-        # response.Fill (x_measured, x_true)
-        response.Fill (Ej, Ei, mc);
-    # account for eff < 1
-    eff_ = R_2D[i,:].sum()
-    pmisses = 1-eff_ # probability of misses
-    response.Miss(Ei,pmisses)
+# for i in range(len(E2f_array)): # x_true
+#     Ei = E_resp_array[i] # x_true
+#     for j in range(len(E2f_array)): # x_measured
+#         Ej = E_resp_array[j] # x_measured
+#         mc = R_2D[i,j]
+#         # response.Fill (x_measured, x_true)
+#         response.Fill (Ej, Ei, mc);
+#     # account for eff < 1
+#     eff_ = R_2D[i,:].sum()
+#     pmisses = 1-eff_ # probability of misses
+#     response.Miss(Ei,pmisses)
 
-fname_save_unf2 = fname_ev_f[0:-4]+"-unfolded2.npy"
+# fname_save_unf2 = fname_ev_f[0:-4]+"-unfolded2.npy"
 
-try:
-    counts_unfolded2 = np.load(fname_save_unf2)
-except:
-    counts_unfolded2 = np.zeros(dim_unfolded)
-    for i_Eg0 in range(len(E0f_array)):
-        for i_Eg1 in range(len(E1f_array)):
-            for i_Eg3 in range(len(E3f_array)):
-                hMeas= TH1D ("meas", "Test Measured", len(E2f_array), Emin, Emax);
-                for i in range(len(E2f_array)):
-                    Ei = E2f_array[i]
-                    hMeas.Fill(Ei,counts_folded[i_Eg0,i_Eg1,i,i_Eg3])
+# try:
+#     counts_unfolded2 = np.load(fname_save_unf2)
+# except:
+#     counts_unfolded2 = np.zeros(dim_unfolded)
+#     for i_Eg0 in range(len(E0f_array)):
+#         for i_Eg1 in range(len(E1f_array)):
+#             for i_Eg3 in range(len(E3f_array)):
+#                 hMeas= TH1D ("meas", "Test Measured", len(E2f_array), Emin, Emax);
+#                 for i in range(len(E2f_array)):
+#                     Ei = E2f_array[i]
+#                     hMeas.Fill(Ei,counts_folded[i_Eg0,i_Eg1,i,i_Eg3])
                 
-                # hack to recalculate the Uncertainties now, after the histogram is filled
-                hMeas.Sumw2(False)
-                hMeas.Sumw2(True)
-                # hTrue.Sumw2(False) # doesn't work yet?
-                # hTrue.Sumw2(True)  # doesn't work yet?
+#                 # hack to recalculate the Uncertainties now, after the histogram is filled
+#                 hMeas.Sumw2(False)
+#                 hMeas.Sumw2(True)
+#                 # hTrue.Sumw2(False) # doesn't work yet?
+#                 # hTrue.Sumw2(True)  # doesn't work yet?
                 
-                # print("==================================== UNFOLD ===================================")
-                unfold= RooUnfoldBayes     (response, hMeas, Niterations);    #  OR
-                # unfold= RooUnfoldSvd     (response, hMeas, 20);     #  OR
-                #unfold= RooUnfoldTUnfold (response, hMeas);         #  OR
-                # unfold= RooUnfoldIds     (response, hMeas, 3);      #  OR
-                # unfold= RooUnfoldInvert    (response, hMeas);      #  OR
+#                 # print("==================================== UNFOLD ===================================")
+#                 unfold= RooUnfoldBayes     (response, hMeas, Niterations);    #  OR
+#                 # unfold= RooUnfoldSvd     (response, hMeas, 20);     #  OR
+#                 #unfold= RooUnfoldTUnfold (response, hMeas);         #  OR
+#                 # unfold= RooUnfoldIds     (response, hMeas, 3);      #  OR
+#                 # unfold= RooUnfoldInvert    (response, hMeas);      #  OR
                 
-                hReco= unfold.Hreco();
-                # unfold.PrintTable (cout, hTrue);
+#                 hReco= unfold.Hreco();
+#                 # unfold.PrintTable (cout, hTrue);
                 
-                counts_unfolded2[i_Eg0,i_Eg1,:,i_Eg3] = np.array(hReco)[0:len(E2f_array)]
+#                 counts_unfolded2[i_Eg0,i_Eg1,:,i_Eg3] = np.array(hReco)[0:len(E2f_array)]
         
 
-    counts_unfolded2 = np.nan_to_num(counts_unfolded2)
-    np.save(fname_save_unf2, counts_unfolded2)
+#     counts_unfolded2 = np.nan_to_num(counts_unfolded2)
+#     np.save(fname_save_unf2, counts_unfolded2)
 
 
 # === TODO: Add axis 3 unfolding ===
@@ -489,30 +488,33 @@ except:
 
 
 # === Plotting by Eg axes ===
-fEgEg, ((axEgEg0, axEgEg1, axEgEg2), (axEgEg3, axEgEg4, axEgEg5)) = plt.subplots(2,3)
-sum_axes = (2,3) # We can only plot 2D, so we sum the other axes
+fEgEg, ((axEgEg0, axEgEg1), (axEgEg2, axEgEg3)) = plt.subplots(2,2)
+# sum_axes = (2,3) # We can only plot 2D, so we sum the other axes
 E_plot_x = E0f_array
 E_plot_y = E1f_array
 
 # True spectr:
-cbar_EgEg0 = axEgEg0.pcolormesh(E_plot_x, E_plot_y, counts_true.sum(axis=sum_axes), norm=customLogNorm)
+cbar_EgEg0 = axEgEg0.pcolormesh(E_plot_x, E_plot_y, counts_true, norm=customLogNorm, cmap="jet")
 axEgEg0.set_title("True")
 fEgEg.colorbar(cbar_EgEg0, ax=axEgEg0)
 # Folded spectr:
-cbar_EgEg1 = axEgEg1.pcolormesh(E_plot_x, E_plot_y, counts_folded.sum(axis=sum_axes), norm=customLogNorm)
+cbar_EgEg1 = axEgEg1.pcolormesh(E_plot_x, E_plot_y, counts_folded, norm=customLogNorm, cmap="jet")
 axEgEg1.set_title("Folded")
 fEgEg.colorbar(cbar_EgEg1, ax=axEgEg1)
 # Unfolded axis 0:
-cbar_EgEg2 = axEgEg2.pcolormesh(E_plot_x, E_plot_y, counts_unfolded0.sum(axis=sum_axes), norm=customLogNorm)
+cbar_EgEg2 = axEgEg2.pcolormesh(E_plot_x, E_plot_y, counts_unfolded0, norm=customLogNorm, cmap="jet")
 axEgEg2.set_title("Unfolded axis 0")
 fEgEg.colorbar(cbar_EgEg2, ax=axEgEg2)
 # Unfolded axis 1:
-cbar_EgEg3 = axEgEg3.pcolormesh(E_plot_x, E_plot_y, counts_unfolded1.sum(axis=sum_axes), norm=customLogNorm)
+cbar_EgEg3 = axEgEg3.pcolormesh(E_plot_x, E_plot_y, counts_unfolded1, norm=customLogNorm, cmap="jet")
 axEgEg3.set_title("Unfolded axis 1")
 fEgEg.colorbar(cbar_EgEg3, ax=axEgEg3)
-# Unfolded axis 2:
-cbar_EgEg4 = axEgEg4.pcolormesh(E_plot_x, E_plot_y, counts_unfolded2.sum(axis=sum_axes), norm=customLogNorm)
-axEgEg4.set_title("Unfolded axis 2")
-fEgEg.colorbar(cbar_EgEg4, ax=axEgEg4)
+# # Unfolded axis 2:
+# cbar_EgEg4 = axEgEg4.pcolormesh(E_plot_x, E_plot_y, counts_unfolded2.sum(axis=sum_axes), norm=customLogNorm, cmap="jet")
+# axEgEg4.set_title("Unfolded axis 2")
+# fEgEg.colorbar(cbar_EgEg4, ax=axEgEg4)
 
 plt.show()
+
+
+# TODO add ExEg plotting of unfolded events.
