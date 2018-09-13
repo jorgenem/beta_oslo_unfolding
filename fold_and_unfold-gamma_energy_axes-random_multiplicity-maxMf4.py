@@ -397,7 +397,7 @@ except:
                 hMeas= TH1D ("meas", "Test Measured", len(E1f_array), Emin, Emax);
                 for i in range(len(E1f_array)):
                     Ei = E1f_array[i]
-                    hMeas.Fill(Ei,counts_folded[i_Eg0,i,i_Eg2,i_Eg3])
+                    hMeas.Fill(Ei,counts_unfolded0[i_Eg0,i,i_Eg2,i_Eg3])
                 
                 # hack to recalculate the Uncertainties now, after the histogram is filled
                 hMeas.Sumw2(False)
@@ -456,7 +456,7 @@ except:
                 hMeas= TH1D ("meas", "Test Measured", len(E2f_array), Emin, Emax);
                 for i in range(len(E2f_array)):
                     Ei = E2f_array[i]
-                    hMeas.Fill(Ei,counts_folded[i_Eg0,i_Eg1,i,i_Eg3])
+                    hMeas.Fill(Ei,counts_unfolded1[i_Eg0,i_Eg1,i,i_Eg3])
                 
                 # hack to recalculate the Uncertainties now, after the histogram is filled
                 hMeas.Sumw2(False)
