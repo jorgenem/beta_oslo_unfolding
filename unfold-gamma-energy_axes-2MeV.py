@@ -22,7 +22,7 @@ rc('font',**{'serif':['Computer Modern Roman']})
 rc('text', usetex=True)
 
 # Read response matrix:
-fname_resp_mat = "response_matrix-SuN2015-20keV-1p0FWHM.dat"
+fname_resp_mat = "response_matrix-SuN2015-20keV-1p0FWHM.m"
 fname_resp_dat = "resp-SuN2015-20keV-1p0FWHM.dat"
 R_2D, cal_resp, E_resp_array, tmp = read_mama_2D(fname_resp_mat)
 # Assumed lower threshold for gammas in response matrix
@@ -372,6 +372,16 @@ print("matrix_unfolded2.sum() =", matrix_unfolded2.sum(), flush=True)
 print("matrix_unfolded2[i_Eg1_low:i_Eg1_high,i_Eg2_low:i_Eg2_high].sum() =", matrix_unfolded2[i_Eg1_low:i_Eg1_high,i_Eg2_low:i_Eg2_high].sum(), flush=True)
 print("matrix_unfolded2[i_Eg1_low:i_Eg1_high,i_Eg2_low:i_Eg2_high].sum()/matrix_true.sum() =", matrix_unfolded2[i_Eg1_low:i_Eg1_high,i_Eg2_low:i_Eg2_high].sum()/matrix_true.sum(), flush=True)
 
+print("")
+print("matrix_unfolded_ExEg.sum() =", matrix_unfolded_ExEg.sum(), flush=True)
+# corresponding approximation(!) to Ex
+Ex_low = Eg1_low + Eg2_low
+Ex_high =  Eg1_high + Eg2_high
+i_Ex_low, i_Ex_high = np.argmin(np.abs(E_array_Ex - Ex_low)), np.argmin(np.abs(E_array_Ex - Ex_high))
+ncounts = matrix_unfolded_ExEg[i_Ex_low:i_Ex_high,i_Eg1_low:i_Eg1_high].sum()
+ncounts += matrix_unfolded_ExEg[i_Ex_low:i_Ex_high,i_Eg2_low:i_Eg2_high].sum()
+print("matrix_unfolded_ExEg(Eg1 & Eg2) =", ncounts, flush=True)
+print("matrix_unfolded_ExEg(Eg1 & Eg2) / matrix_true.sum() =", ncounts/matrix_true.sum(), flush=True)
 
 
 
