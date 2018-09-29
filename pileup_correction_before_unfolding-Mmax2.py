@@ -124,9 +124,32 @@ def FoldEg(Egs_t, Mf_max, Eg_arr, response, pileup=True, p_pile=0.2):
     # print("Folding. True gammas =", Egs_t, flush=True)
     Mt_curr = len(Egs_t[Egs_t>0]) # Number of true gammas
 
+    
+    Mf_curr = Mt_curr # Folded multiplicity is the same as true because we do pileup after energy folding
+
+    # Now proceed to fold each gamma with detector response:
+    Egs_folded = np.zeros(Mf_curr)
+    for i in range(Mf_curr):
+        Eg = Egs_t[i]
+        index_Eg = np.argmin(np.abs(Eg_arr - Eg))
+        if R_2D[index_Eg,:].sum() > 0:
+            # choosing rand accounts for the efficiency; As the efficiency read from file currently
+            # does not always correspons with the counts in R_2D, see #3, we need two if tests
+            rand = np.random.uniform()
+            if rand <= eff[index_Eg]:
+                # If the gamma is not lost to efficiency, redistribute its energy somewhere in the response:
+                Eg_folded = np.random.choice(Eg_arr, p=response[index_Eg,:])
+            else: 
+                Eg_folded = 0 # Give Energy 0 to events that are not recorded.
+        else: 
+            Eg_folded = 0 # Give Energy 0 to events that are not recorded (below detector threshold)
+
+        Egs_folded[i] = Eg_folded
+
+
     if pileup: # Is pileup desired?
-        # For each true gamma, assign it to pileup with probability p_pile:
-        indices_pile = [] # Store indices in Egs_true
+        # For each folded gamma, assign it to pileup with probability p_pile:
+        indices_pile = [] # Store indices in Egs_folded
         counter_nopile = 0
         map_to_pileup = {} # Map the indices that are *not* pileup to a new index set so that there are no index holes
                         # For example if Mt = 3 and index 1 is pileup, then map_nopile = {0:0, 2:1}.
@@ -161,36 +184,16 @@ def FoldEg(Egs_t, Mf_max, Eg_arr, response, pileup=True, p_pile=0.2):
 
         Egs_piled = np.zeros(Mf_curr)
         for i_t in range(Mt_curr):
-            Egs_piled[map_to_pileup[i_t]] += Egs_t[i_t]
+            Egs_piled[map_to_pileup[i_t]] += Egs_folded[i_t]
 
     else:
         # Do not include pileup:
-        Egs_piled = Egs_t
-        Mf_curr = Mt_curr
+        Egs_piled = Egs_folded
+        # Mf_curr = Mt_curr
 
     # print("Piled gammas =", Egs_piled, flush=True)
 
-
-    # Now proceed to fold each gamma with detector response:
-    Egs_folded = np.zeros(Mf_curr)
-    for i in range(Mf_curr):
-        Eg = Egs_piled[i]
-        index_Eg = np.argmin(np.abs(Eg_arr - Eg))
-        if R_2D[index_Eg,:].sum() > 0:
-            # choosing rand accounts for the efficiency; As the efficiency read from file currently
-            # does not always correspons with the counts in R_2D, see #3, we need two if tests
-            rand = np.random.uniform()
-            if rand <= eff[index_Eg]:
-                # If the gamma is not lost to efficiency, redistribute its energy somewhere in the response:
-                Eg_folded = np.random.choice(Eg_arr, p=response[index_Eg,:])
-            else: 
-                Eg_folded = 0 # Give Energy 0 to events that are not recorded.
-        else: 
-            Eg_folded = 0 # Give Energy 0 to events that are not recorded (below detector threshold)
-
-        Egs_folded[i] = Eg_folded
-
-    return Egs_folded
+    return Egs_piled
 
 
 
