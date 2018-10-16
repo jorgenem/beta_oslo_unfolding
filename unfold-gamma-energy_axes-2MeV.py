@@ -22,7 +22,7 @@ rc('font',**{'serif':['Computer Modern Roman']})
 rc('text', usetex=True)
 
 # Read response matrix:
-fname_resp_mat = "response_matrix-SuN2015-20keV-1p0FWHM.dat"
+fname_resp_mat = "response_matrix-SuN2015-20keV-1p0FWHM.m"
 fname_resp_dat = "resp-SuN2015-20keV-1p0FWHM.dat"
 R_2D, cal_resp, E_resp_array, tmp = read_mama_2D(fname_resp_mat)
 # Assumed lower threshold for gammas in response matrix
@@ -357,6 +357,22 @@ f1.colorbar(cbar_ax8, ax=ax8)
 ax8.set_title("ExEg sorted folded spec, unfolded along Eg axis")
 ax8.set_xlabel("$E_{\gamma}\,\mathrm{(keV)}$")
 ax8.set_ylabel("$E_x \,\mathrm{(keV)}$")
+
+
+
+# Make plot of ExEg version of the matrix unfolded along only one gamma direction
+f_extra, ax_ExEg_1gammadir = plt.subplots(1,1)
+# (1) Sort and plot ExEg version of the matrix unfolded along one gamma direction only
+matrix_ExEg_unfolded1direction = np.zeros((Nbins_Ex, Nbins))
+for i_Eg1 in range(Nbins):
+    for i_Eg2 in range(Nbins):
+        i_Ex = i_Eg1 + i_Eg2
+        matrix_ExEg_unfolded1direction[i_Ex,i_Eg1] += matrix_unfolded1[i_Eg1, i_Eg2]
+        matrix_ExEg_unfolded1direction[i_Ex,i_Eg2] += matrix_unfolded1[i_Eg1, i_Eg2]
+
+cbar_ExEg_1gammadir = ax_ExEg_1gammadir.imshow(matrix_ExEg_unfolded1direction, norm=customLogNorm, origin="lower", extent=[E_resp_array[0], E_resp_array[-1], E_array_Ex[0], E_array_Ex[-1]], aspect=Nbins/Nbins_Ex, cmap="jet")
+f_extra.colorbar(cbar_ExEg_1gammadir, ax=ax_ExEg_1gammadir)
+
 
 
 
