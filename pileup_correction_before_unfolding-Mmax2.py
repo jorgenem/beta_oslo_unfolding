@@ -32,7 +32,7 @@ Mt_max = 2#5 # Max true multiplicity
 Mf_max = 2 # Max detector multiplicity
 
 
-customLogNorm = LogNorm(vmin=1e0, vmax=N_events)
+customLogNorm = LogNorm(vmin=1e0, vmax=N_events/10)
 
 
 # == Read and set up response matrix ==
@@ -99,8 +99,8 @@ except:
     events_t = np.zeros((N_events,Mt_max))
     Eg_gaussian_centroids = np.array([1700,1300,500,1000])
     for i_ev in range(N_events):
-        Mt_curr = np.random.randint(low=1,high=(Mt_max+1))
-        # Mt_curr = 2 # Testing, comparison to the first test we did with 2 gammas for the report
+        # Mt_curr = np.random.randint(low=1,high=(Mt_max+1))
+        Mt_curr = 2 # Testing, comparison to the first test we did with 2 gammas for the report
         # Egs_current = np.random.uniform(low=0, high=Emax, size=Mt_curr)
         Egs_current = np.random.normal(loc=Eg_gaussian_centroids[0:Mt_curr], scale=0.5*np.sqrt(Eg_gaussian_centroids[0:Mt_curr]), size=Mt_curr)
         events_t[i_ev,0:Mt_curr] = Egs_current

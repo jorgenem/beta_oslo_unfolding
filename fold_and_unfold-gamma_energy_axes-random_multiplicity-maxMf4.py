@@ -482,9 +482,60 @@ except:
     np.save(fname_save_unf2, counts_unfolded2)
 
 
-# === TODO: Add axis 3 unfolding ===
-# Also, could it work better by going backwards? Unfolding axis 3 first, etc? Since it's the sparsest one. Or maybe it makes no difference.
 
+# === Axis 3 ===# Set up response:
+print("==================================== TRAIN ====================================", flush=True)
+hTrue= TH1D ("true", "Test Truth",    len(E3f_array), Emin, Emax);
+hMeas= TH1D ("meas", "Test Measured", len(E3f_array), Emin, Emax);
+response= RooUnfoldResponse (hMeas, hTrue);
+
+for i in range(len(E3f_array)): # x_true
+    Ei = E_resp_array[i] # x_true
+    for j in range(len(E3f_array)): # x_measured
+        Ej = E_resp_array[j] # x_measured
+        mc = R_2D[i,j]
+        # response.Fill (x_measured, x_true)
+        response.Fill (Ej, Ei, mc);
+    # account for eff < 1
+    eff_ = R_2D[i,:].sum()
+    pmisses = 1-eff_ # probability of misses
+    response.Miss(Ei,pmisses)
+
+fname_save_unf3 = fname_ev_f[0:-4]+"-unfolded3.npy"
+
+try:
+    counts_unfolded3 = np.load(fname_save_unf3)
+except:
+    counts_unfolded3 = np.zeros(dim_unfolded)
+    for i_Eg0 in range(len(E0f_array)):
+        for i_Eg1 in range(len(E1f_array)):
+            for i_Eg2 in range(len(E2f_array)):
+                hMeas= TH1D ("meas", "Test Measured", len(E3f_array), Emin, Emax);
+                for i in range(len(E2f_array)):
+                    Ei = E2f_array[i]
+                    hMeas.Fill(Ei,counts_unfolded1[i_Eg0,i_Eg1,i,i_Eg3])
+                
+                # hack to recalculate the Uncertainties now, after the histogram is filled
+                hMeas.Sumw2(False)
+                hMeas.Sumw2(True)
+                # hTrue.Sumw2(False) # doesn't work yet?
+                # hTrue.Sumw2(True)  # doesn't work yet?
+                
+                # print("==================================== UNFOLD ===================================")
+                unfold= RooUnfoldBayes     (response, hMeas, Niterations);    #  OR
+                # unfold= RooUnfoldSvd     (response, hMeas, 20);     #  OR
+                #unfold= RooUnfoldTUnfold (response, hMeas);         #  OR
+                # unfold= RooUnfoldIds     (response, hMeas, 3);      #  OR
+                # unfold= RooUnfoldInvert    (response, hMeas);      #  OR
+                
+                hReco= unfold.Hreco();
+                # unfold.PrintTable (cout, hTrue);
+                
+                counts_unfolded2[i_Eg0,i_Eg1,:,i_Eg3] = np.array(hReco)[0:len(E2f_array)]
+        
+
+    counts_unfolded2 = np.nan_to_num(counts_unfolded2)
+    np.save(fname_save_unf2, counts_unfolded2)
 
 
 
