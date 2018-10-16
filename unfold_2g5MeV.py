@@ -38,9 +38,13 @@ for iteration in range(15):
 
 f, ((ax_raw, ax_unf), (ax_folded, ax_diff)) = plt.subplots(2,2)
 ax_raw.pcolormesh(E_array, E_array, combination, norm=LogNorm())
+ax_raw.set_title("raw")
 ax_unf.pcolormesh(E_array, E_array, unfolded, norm=LogNorm())
+ax_unf.set_title("unf")
 ax_folded.pcolormesh(E_array, E_array, folded, norm=LogNorm())
+ax_folded.set_title("folded")
 ax_diff.pcolormesh(E_array, E_array, np.abs(folded-combination), norm=LogNorm())
+ax_diff.set_title("diff")
 
 plt.show()
 
