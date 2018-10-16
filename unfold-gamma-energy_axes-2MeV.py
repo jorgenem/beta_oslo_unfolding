@@ -363,7 +363,9 @@ ax8.set_ylabel("$E_x \,\mathrm{(keV)}$")
 
 
 # Calculate some integrals:
+# Number of events in true matrix:
 print("matrix_true.sum() =", matrix_true.sum(), flush=True)
+# Number of events reconstructed by the Eg1-Eg2 unfolding inside set limits:
 Eg1_low, Eg1_high = 1500,1900
 Eg2_low, Eg2_high = 1150,1450
 i_Eg1_low, i_Eg1_high = np.argmin(np.abs(E_resp_array - Eg1_low)), np.argmin(np.abs(E_resp_array - Eg1_high))
@@ -372,6 +374,20 @@ print("matrix_unfolded2.sum() =", matrix_unfolded2.sum(), flush=True)
 print("matrix_unfolded2[i_Eg1_low:i_Eg1_high,i_Eg2_low:i_Eg2_high].sum() =", matrix_unfolded2[i_Eg1_low:i_Eg1_high,i_Eg2_low:i_Eg2_high].sum(), flush=True)
 print("matrix_unfolded2[i_Eg1_low:i_Eg1_high,i_Eg2_low:i_Eg2_high].sum()/matrix_true.sum() =", matrix_unfolded2[i_Eg1_low:i_Eg1_high,i_Eg2_low:i_Eg2_high].sum()/matrix_true.sum(), flush=True)
 
+# Number of events in the same Eg1-Eg2 unfolded matrix after it is resorted to ExEg, just to check that we're doing this right:
+print("")
+print("matrix_ExEg_unfolded.sum() =", matrix_ExEg_unfolded.sum(), flush=True)
+# corresponding approximation(!) to Ex
+Ex_low = Eg1_low + Eg2_low
+Ex_high =  Eg1_high + Eg2_high
+i_Ex_low, i_Ex_high = np.argmin(np.abs(E_array_Ex - Ex_low)), np.argmin(np.abs(E_array_Ex - Ex_high))
+ncounts = matrix_ExEg_unfolded[i_Ex_low:i_Ex_high,i_Eg1_low:i_Eg1_high].sum()
+ncounts += matrix_ExEg_unfolded[i_Ex_low:i_Ex_high,i_Eg2_low:i_Eg2_high].sum()
+print("matrix_ExEg_unfolded(Eg1 & Eg2) =", ncounts, flush=True)
+print("matrix_ExEg_unfolded(Eg1 & Eg2) / (2*matrix_true.sum()) =", ncounts/(2*matrix_true.sum()), flush=True) 
+# Divide by a factor of two here to correct for multiplicity -- ExEg matrices have M times as many counts as EgEg matrices.
+
+# And finally, number of events reconstructed inside the limits when using the old Eg-only unfolding of the ExEg sorted matrix:
 print("")
 print("matrix_unfolded_ExEg.sum() =", matrix_unfolded_ExEg.sum(), flush=True)
 # corresponding approximation(!) to Ex
@@ -381,8 +397,8 @@ i_Ex_low, i_Ex_high = np.argmin(np.abs(E_array_Ex - Ex_low)), np.argmin(np.abs(E
 ncounts = matrix_unfolded_ExEg[i_Ex_low:i_Ex_high,i_Eg1_low:i_Eg1_high].sum()
 ncounts += matrix_unfolded_ExEg[i_Ex_low:i_Ex_high,i_Eg2_low:i_Eg2_high].sum()
 print("matrix_unfolded_ExEg(Eg1 & Eg2) =", ncounts, flush=True)
-print("matrix_unfolded_ExEg(Eg1 & Eg2) / matrix_true.sum() =", ncounts/matrix_true.sum(), flush=True)
-
+print("matrix_unfolded_ExEg(Eg1 & Eg2) / (2*matrix_true.sum()) =", ncounts/(2*matrix_true.sum()), flush=True) 
+# Divide by a factor of two here to correct for multiplicity -- ExEg matrices have M times as many counts as EgEg matrices.
 
 
 # f1.subplots_adjust(wspace=0, hspace=0)
