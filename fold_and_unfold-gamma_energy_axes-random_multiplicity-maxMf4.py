@@ -106,9 +106,17 @@ except:
 
 
 
-print("Events true:", flush=True)
-print(events_t, flush=True)
 
+
+
+
+# Print events nice and quit:
+print("Event list:")
+print("{:10s}{:10s}{:10s}{:10s}".format("Eg1", "Eg2", "Eg3", "Eg4"))
+for i_ev in range(N_events):
+    print("{:10.2f}{:10.2f}{:10.2f}{:10.2f}".format(events_t[i_ev,0],events_t[i_ev,1],events_t[i_ev,2],events_t[i_ev,3]))
+
+sys.exit(0)
 
 
 
@@ -203,8 +211,15 @@ except:
         events_f[i_ev,0:len(Egs_folded)] = Egs_folded
     np.save(fname_ev_f, events_f)
 
-print("Events folded:", flush=True)
-print(events_f)
+
+
+# Print events nice and quit:
+print("Event list (folded):")
+print("{:10s}{:10s}{:10s}{:10s}".format("Eg1", "Eg2", "Eg3", "Eg4"))
+for i_ev in range(N_events):
+    print("{:10.2f}{:10.2f}{:10.2f}{:10.2f}".format(events_f[i_ev,0],events_f[i_ev,1],events_f[i_ev,2],events_f[i_ev,3]))
+
+sys.exit(0)
 
 
 
